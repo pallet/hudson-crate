@@ -1,5 +1,7 @@
 # Release notes
 
+## hudson-0.6.0
+
 - Ensure jobs, plugins and fingerprints directories are owned by the hudson
   user
   These were being set to hudson-owner, which was preventing hudson from
@@ -46,7 +48,7 @@
 
 - Update for 0.5.0-SNAPSHOT
   Change pallet.resource.* to pallet.action.*. Change stevedore calls to
-  script functions to use unquote and the pallet.script.lib namespace. 
+  script functions to use unquote and the pallet.script.lib namespace.
   Change request to session.  Change build-resources to build-actions.
 
 - Add Ant configuration to Hudson
@@ -56,14 +58,14 @@
 
 - Add support for svn credentials in hudson job configuration
   In order to access a svn repository with credentials, pass the
-  :subversion-credentials keyword to the hudson job definition.  The 
+  :subversion-credentials keyword to the hudson job definition.  The
   argument is a map from a name, to a map of :user-name and password
 
 
 ## pallet-crates-0.4.1
 
 - Add :version option to hudson/plugin
-  To allow running with a stable version of a plugin, add the :version 
+  To allow running with a stable version of a plugin, add the :version
   option to pallet.crate.hudson/plugin.  The jenkins site .../latest/..
   link is not functional at the moment.
 
