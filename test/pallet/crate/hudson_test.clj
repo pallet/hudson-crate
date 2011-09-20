@@ -40,6 +40,10 @@
                                   {:data-path "/var/lib/hudson"})}
            (directory/directory
             "/var/lib/hudson" :owner "root" :group "tomcat6" :mode "0775")
+           (directory/directories
+            ["/var/lib/hudson/plugins" "/var/lib/hudson/jobs"
+             "/var/lib/hudson/fingerprints"]
+            :owner "tomcat6" :group "tomcat6" :mode "0775")
            (remote-file/remote-file
             "/var/lib/hudson/hudson.war"
             :url (str hudson-download-base-url "latest/jenkins.war")
@@ -138,16 +142,11 @@
              {}
              (directory/directory
               "/var/lib/hudson/jobs/project" :p true
-              :owner "root" :group "tomcat6" :mode "0775")
+              :owner "tomcat6" :group "tomcat6" :mode "0775")
              (remote-file/remote-file
               "/var/lib/hudson/jobs/project/config.xml"
               :content "<?xml version='1.0' encoding='utf-8'?>\n<maven2-moduleset>\n  <actions></actions>\n  <description></description>\n  <logRotator>\n    <daysToKeep>-1</daysToKeep>\n    <numToKeep>-1</numToKeep>\n    <artifactDaysToKeep>-1</artifactDaysToKeep>\n    <artifactNumToKeep>-1</artifactNumToKeep>\n  </logRotator>\n  <keepDependencies>false</keepDependencies>\n  <properties><hudson.plugins.disk__usage.DiskUsageProperty></hudson.plugins.disk__usage.DiskUsageProperty></properties>\n  <scm class=\"hudson.plugins.git.GitSCM\">\n  <remoteRepositories>\n    <org.spearce.jgit.transport.RemoteConfig>\n      <string>origin</string>\n      <int>5</int>\n      <string>fetch</string>\n      <string>+refs/heads/*:refs/remotes/origin/*</string>\n      <string>receivepack</string>\n      <string>git-upload-pack</string>\n      <string>uploadpack</string>\n      <string>git-upload-pack</string>\n      <string>url</string>\n      <string>http://project.org/project.git</string>\n      <string>tagopt</string>\n      <string></string>\n    </org.spearce.jgit.transport.RemoteConfig>\n  </remoteRepositories>\n  <branches>\n    <hudson.plugins.git.BranchSpec>\n      <name>origin/master</name>\n    </hudson.plugins.git.BranchSpec>\n  </branches>\n  <mergeOptions></mergeOptions>\n  <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>\n  <submoduleCfg class=\"list\"></submoduleCfg>\n</scm>\n  <canRoam>true</canRoam>\n  <disabled>false</disabled>\n  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>\n  \n  <triggers class=\"vector\"><hudson.triggers.SCMTrigger><spec>*/15 * * * *</spec></hudson.triggers.SCMTrigger></triggers>\n  <concurrentBuild>false</concurrentBuild>\n  <rootModule>\n    <groupId>project</groupId>\n    <artifactId>artifact</artifactId>\n  </rootModule>\n  <goals>clojure:test</goals>\n  <defaultGoals></defaultGoals>\n  \n  <mavenOpts>-Dx=y</mavenOpts>\n  <mavenName>base maven</mavenName>\n  <aggregatorStyleBuild>true</aggregatorStyleBuild>\n  <incrementalBuild>false</incrementalBuild>\n  <usePrivateRepository>false</usePrivateRepository>\n  <ignoreUpstremChanges>false</ignoreUpstremChanges>\n  <archivingDisabled>false</archivingDisabled>\n  <reporters></reporters>\n  <publishers></publishers>\n  <buildWrappers></buildWrappers>\n</maven2-moduleset>"
-              :owner "root" :group "tomcat6" :mode "0664")
-             (directory/directory
-              "/var/lib/hudson"
-              :owner "root" :group "tomcat6"
-              :mode "g+w"
-              :recursive true)))
+              :owner "root" :group "tomcat6" :mode "0664")))
            (first
             (build-actions/build-actions
              {:server {:image {:os-family :ubuntu}}
@@ -191,8 +190,6 @@
             :group "tomcat6")
            (directory/directory
             "/usr/share/tomcat6/.m2" :group "tomcat6" :mode "g+w")
-           (directory/directory
-            "/var/lib/hudson" :owner "root" :group "tomcat6" :mode "775")
            (remote-file/remote-file
             "/var/lib/hudson/hudson.tasks.Maven.xml"
             :content "<?xml version='1.0' encoding='utf-8'?>\n<hudson.tasks.Maven_-DescriptorImpl>\n  <installations>\n    <hudson.tasks.Maven_-MavenInstallation>\n      <name>default maven</name>\n      <home>/var/lib/hudson/tools/default_maven</home>\n      \n    </hudson.tasks.Maven_-MavenInstallation>\n  </installations>\n</hudson.tasks.Maven_-DescriptorImpl>"
@@ -212,8 +209,6 @@
   (is (= (first
           (build-actions/build-actions
            {}
-           (directory/directory
-            "/var/lib/hudson" :owner "root" :group "tomcat6" :mode "775")
            (remote-file/remote-file
             "/var/lib/hudson/hudson.tasks.Ant.xml"
             :content "<?xml version='1.0' encoding='utf-8'?>\n<hudson.tasks.Ant_-DescriptorImpl>\n  <installations>\n    <hudson.tasks.Ant_-AntInstallation>\n      <name>name</name>\n      <home>/some/path</home>\n      <properties>a=1\n</properties>\n    </hudson.tasks.Ant_-AntInstallation>\n  </installations>\n</hudson.tasks.Ant_-DescriptorImpl>"
@@ -233,7 +228,9 @@
   (is (= (first
           (build-actions/build-actions
            {}
-           (directory/directory "/var/lib/hudson/plugins")
+           (directory/directory
+            "/var/lib/hudson/plugins"
+            :owner "tomcat6" :group "tomcat6" :mode "0775")
            (user/user "tomcat6" :action :manage :comment "hudson")
            (remote-file/remote-file
             "/var/lib/hudson/plugins/git.hpi"
@@ -250,7 +247,9 @@
   (is (= (first
           (build-actions/build-actions
            {}
-           (directory/directory "/var/lib/hudson/plugins")
+           (directory/directory
+            "/var/lib/hudson/plugins"
+            :owner "tomcat6" :group "tomcat6" :mode "0775")
            (user/user "tomcat6" :action :manage :comment "hudson")
            (remote-file/remote-file
             "/var/lib/hudson/plugins/git.hpi"
