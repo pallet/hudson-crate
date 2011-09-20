@@ -62,10 +62,13 @@
 (defn tomcat-deploy
   "Install hudson on tomcat.
      :version version-string   - specify version, eg 1.355, or :latest"
-  [session & {:keys [version] :or {version :latest} :as options}]
+  [session & {:keys [version tomcat-instance]
+              :or {version :latest} :as options}]
   (logging/trace (str "Hudson - install on tomcat"))
-  (let [user (parameter/get-for-target session [:tomcat :owner])
-        group (parameter/get-for-target session [:tomcat :group])
+  (let [tc-settings (parameter/get-target-settings
+                     session :tomcat tomcat-instance)
+        user (:owner tc-settings)
+        group (:group tc-settings)
         file (str hudson-data-path "/hudson.war")]
     (->
      session
@@ -76,6 +79,10 @@
       [:hudson :group] group)
      (directory/directory
       hudson-data-path :owner hudson-owner :group group :mode "0775")
+     ;; directories that need to be owned by the hudson user
+     (directory/directories
+      (map #(str hudson-data-path "/" %) ["plugins" "jobs" "fingerprints"])
+      :owner user :group group :mode "0775")
      (remote-file/remote-file
       file :url (hudson-url version)
       :md5 (hudson-md5 version))
@@ -331,10 +338,14 @@
              (select-keys options [:url :md5]))
         hudson-data-path (parameter/get-for-target
                           session [:hudson :data-path])
-        hudson-group (parameter/get-for-target
-                      session [:hudson :group])]
+        hudson-group (parameter/get-for-target session [:hudson :group])
+        hudson-user (parameter/get-for-target
+                     session [:hudson :user] hudson-user)]
     (-> session
-        (directory/directory (str hudson-data-path "/plugins"))
+        (directory/directory
+         (str hudson-data-path "/plugins")
+         :owner hudson-user    ; some plugins dynamically unpacked by hudson app
+         :group hudson-group :mode "0775")
         (thread-expr/apply->
          remote-file/remote-file
          (str hudson-data-path "/plugins/" (name plugin) ".hpi")
@@ -626,6 +637,43 @@
                                (:ignore-upstream-changes options true))))
    scm-type scms options))
 
+(defn script-job-xml
+  "Generate script job/config.xml content"
+  [session scm-type scms options]
+  (enlive/xml-emit
+   (enlive/xml-template
+    (path-for *ant-job-config-file*) session
+    [scm-type scms options]
+    [:daysToKeep] (enlive/transform-if-let [keep (:days-to-keep options)]
+                                           (xml/content (str keep)))
+    [:numToKeep] (enlive/transform-if-let [keep (:num-to-keep options)]
+                                          (xml/content (str keep)))
+    [:properties] (enlive/transform-if-let
+                   [properties (:properties options)]
+                   (xml/content (map plugin-property properties)))
+    [:scm] (xml/substitute
+            (when scm-type
+              (output-scm-for scm-type session (first scms) options)))
+    [:concurrentBuild] (xml/content
+                        (truefalse (:concurrent-build options false)))
+    [:builders xml/first-child] (xml/clone-for
+                                 [task (:script-tasks options)]
+                                 [:targets] (xml/content (:targets task))
+                                 [:properties] (xml/content
+                                                (format/name-values
+                                                 (:properties task)
+                                                 :separator "=")))
+    [:publishers]
+    (xml/html-content
+     (string/join (map publisher-config (:publishers options))))
+    [:aggregatorStyleBuild] (xml/content
+                             (truefalse
+                              (:aggregator-style-build options true)))
+    [:ignoreUpstreamChanges] (xml/content
+                              (truefalse
+                               (:ignore-upstream-changes options true))))
+   scm-type scms options))
+
 (defmulti output-build-for
   "Output the build definition for specified type"
   (fn [build-type session scm-type scms options] build-type))
@@ -639,6 +687,11 @@
   [build-type session scm-type scms options]
   (let [scm-type (or scm-type (some determine-scm-type scms))]
     (ant-job-xml session scm-type scms options)))
+
+(defmethod output-build-for :script
+  [build-type session scm-type scms options]
+  (let [scm-type (or scm-type (some determine-scm-type scms))]
+    (script-job-xml session scm-type scms options)))
 
 (defn credential-entry
   "Produce an xml representation for a credential entry in a credential store"
@@ -726,6 +779,7 @@
                                          subversion-credentials]
                                   :as options}]
   (let [hudson-owner (parameter/get-for-target session [:hudson :owner])
+        hudson-user (parameter/get-for-target session [:hudson :user])
         hudson-group (parameter/get-for-target session [:hudson :group])
         hudson-data-path (parameter/get-for-target
                           session [:hudson :data-path])
@@ -733,8 +787,9 @@
     (logging/trace (str "Hudson - configure job " job-name))
     (->
      session
-     (directory/directory (str hudson-data-path "/jobs/" job-name) :p true
-                :owner hudson-owner :group hudson-group :mode  "0775")
+     (directory/directory
+      (str hudson-data-path "/jobs/" job-name) :p true
+      :owner hudson-user :group hudson-group :mode  "0775")
      (remote-file/remote-file
       (str hudson-data-path "/jobs/" job-name "/config.xml")
       :content
@@ -745,11 +800,6 @@
        scm
        (dissoc options :scm :scm-type))
       :owner hudson-owner :group hudson-group :mode "0664")
-     (directory/directory
-      hudson-data-path
-      :owner hudson-owner :group hudson-group
-      :mode "g+w"
-      :recursive true)
      (thread-expr/when->
       subversion-credentials
       (remote-file/remote-file
@@ -828,8 +878,6 @@
                           session [:hudson :data-path])]
     (stevedore/do-script
      (directory* session "/usr/share/tomcat6/.m2" :group group :mode "g+w")
-     (directory*
-      session hudson-data-path :owner hudson-owner :group group :mode "775")
      (remote-file*
       session
       (str hudson-data-path "/" *maven-file*)
@@ -850,8 +898,6 @@
         hudson-data-path (parameter/get-for-target
                           session [:hudson :data-path])]
     (stevedore/do-script
-     (directory*
-      session hudson-data-path :owner hudson-owner :group group :mode "775")
      (remote-file*
       session
       (str hudson-data-path "/" *ant-file*)
