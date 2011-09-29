@@ -634,7 +634,10 @@
                               (:aggregator-style-build options true)))
     [:ignoreUpstreamChanges] (xml/content
                               (truefalse
-                               (:ignore-upstream-changes options true))))
+                               (:ignore-upstream-changes options true)))
+
+    [:triggers]
+    (xml/html-content (string/join (map trigger-config (:triggers options)))))
    scm-type scms options))
 
 (defn script-job-xml
@@ -671,7 +674,9 @@
                               (:aggregator-style-build options true)))
     [:ignoreUpstreamChanges] (xml/content
                               (truefalse
-                               (:ignore-upstream-changes options true))))
+                               (:ignore-upstream-changes options true)))
+    [:triggers]
+    (xml/html-content (string/join (map trigger-config (:triggers options)))))
    scm-type scms options))
 
 (defmulti output-build-for
