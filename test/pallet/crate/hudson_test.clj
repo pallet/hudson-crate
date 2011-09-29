@@ -80,7 +80,7 @@
             [:host :id :hudson :group] "tomcat6"))))))
 
 (deftest determine-scm-type-test
-  (is (= :git (determine-scm-type ["http://project.org/project.git"]))))
+  (is (= :git (determine-scm-type "http://project.org/project.git"))))
 
 (deftest normalise-scms-test
   (is (= [["http://project.org/project.git"]]
@@ -95,18 +95,18 @@
                   "http://project.org/project.git" {}))))))
 
 (deftest output-scm-for-svn-test
-  (is (= "<scm class=\"hudson.scm.SubversionSCM\">\n  <locations>\n    <hudson.scm.SubversionSCM_-ModuleLocation>\n      <remote>http://project.org/svn/project</remote>\n    </hudson.scm.SubversionSCM_-ModuleLocation>\n  </locations>\n  <useUpdate>false</useUpdate>\n  <doRevert>false</doRevert>\n  \n  <excludedRegions></excludedRegions>\n  <includedRegions></includedRegions>\n  <excludedUsers></excludedUsers>\n  <excludedRevprop></excludedRevprop>\n  <excludedCommitMessages></excludedCommitMessages>\n</scm>"
+  (is (= "<scm class=\"hudson.scm.SubversionSCM\">\n  <locations>\n    <hudson.scm.SubversionSCM_-ModuleLocation>\n      <remote>http://project.org/svn/project</remote>\n      <local></local>\n    </hudson.scm.SubversionSCM_-ModuleLocation>\n  </locations>\n  <useUpdate>false</useUpdate>\n  <doRevert>false</doRevert>\n  \n  <excludedRegions></excludedRegions>\n  <includedRegions></includedRegions>\n  <excludedUsers></excludedUsers>\n  <excludedRevprop></excludedRevprop>\n  <excludedCommitMessages></excludedCommitMessages>\n</scm>"
          (apply str
                 (xml/emit*
                  (output-scm-for
                   :svn {:server {:group-name :b :image {:os-family :ubuntu}}}
-                  ["http://project.org/svn/project"] {})))))
-  (is (= "<scm class=\"hudson.scm.SubversionSCM\">\n  <locations>\n    <hudson.scm.SubversionSCM_-ModuleLocation>\n      <remote>http://project.org/svn/project/branch/a</remote><remote>http://project.org/svn/project/branch/a</remote>\n    </hudson.scm.SubversionSCM_-ModuleLocation><hudson.scm.SubversionSCM_-ModuleLocation>\n      <remote>http://project.org/svn/project/branch/b</remote><remote>http://project.org/svn/project/branch/b</remote>\n    </hudson.scm.SubversionSCM_-ModuleLocation>\n  </locations>\n  <useUpdate>false</useUpdate>\n  <doRevert>false</doRevert>\n  <browser class=\"c\"><url>url</url></browser>\n  <excludedRegions></excludedRegions>\n  <includedRegions></includedRegions>\n  <excludedUsers></excludedUsers>\n  <excludedRevprop></excludedRevprop>\n  <excludedCommitMessages></excludedCommitMessages>\n</scm>"
+                  "http://project.org/svn/project" {})))))
+  (is (= "<scm class=\"hudson.scm.SubversionSCM\">\n  <locations>\n    <hudson.scm.SubversionSCM_-ModuleLocation>\n      <remote>http://project.org/svn/project/branch/a</remote>\n      <local></local>\n    </hudson.scm.SubversionSCM_-ModuleLocation><hudson.scm.SubversionSCM_-ModuleLocation>\n      <remote>http://project.org/svn/project/branch/b</remote>\n      <local></local>\n    </hudson.scm.SubversionSCM_-ModuleLocation>\n  </locations>\n  <useUpdate>false</useUpdate>\n  <doRevert>false</doRevert>\n  <browser class=\"c\"><url>url</url></browser>\n  <excludedRegions></excludedRegions>\n  <includedRegions></includedRegions>\n  <excludedUsers></excludedUsers>\n  <excludedRevprop></excludedRevprop>\n  <excludedCommitMessages></excludedCommitMessages>\n</scm>"
          (apply str
                 (xml/emit*
                  (output-scm-for
                   :svn {:server {:group-name :b :image {:os-family :ubuntu}}}
-                  ["http://project.org/svn/project/branch/"]
+                  "http://project.org/svn/project/branch/"
                   {:branches ["a" "b"]
                    :browser {:class "c" :url "url"}}))))))
 

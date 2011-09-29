@@ -353,11 +353,19 @@
          (apply concat src))
         (plugin-config plugin options))))
 
+(defn- path-from-scm [scm-spec]
+  (let [scm-spec (if (vector? scm-spec) (first scm-spec) scm-spec)]
+    (if (string? scm-spec)
+      scm-spec
+      (:remote scm-spec))))
+
+(defn- local-from-scm [scm]
+  (if (string? scm) "" (or (:local scm) "")))
 
 (defn determine-scm-type
   "determine the scm type"
   [scm-spec]
-  (let [scm-path (first scm-spec)]
+  (let [scm-path (path-from-scm scm-spec)]
     (cond
      (.contains scm-path "git") :git
      (.contains scm-path "svn") :svn
@@ -368,7 +376,7 @@
 
 (defmulti output-scm-for
   "Output the scm definition for specified type"
-  (fn [scm-type session scm-path options] scm-type))
+  (fn [scm-type node-type scm options] scm-type))
 
 (enlive/deffragment branch-transform
   [branch]
@@ -381,7 +389,7 @@
 ;; "Generate git scm configuration for job content"
 (enlive/defsnippet git-job-xml
   (path-for *git-file*) session
-  [session scm-path options]
+  [session scm options]
   [:branches :> :*]
   (xml/clone-for [branch (:branches options ["*"])]
                  (branch-transform branch))
@@ -398,7 +406,7 @@
 
   [:#url]
   (xml/do->
-   (xml/content scm-path)
+   (xml/content (path-from-scm scm))
    (xml/remove-attr :id))
   [:#refspec]
   (xml/do->
@@ -422,16 +430,17 @@
                             (xml/content tagopt))))
 
 (defmethod output-scm-for :git
-  [scm-type session scm-path options]
-  (git-job-xml session scm-path options))
+  [scm-type session scm options]
+  (git-job-xml session scm options))
 
 ;; "Generate svn scm configuration for job content"
 (enlive/defsnippet svn-job-xml
   (path-for *svn-file*) session
-  [session scm-path options]
-  [:locations :*] (xml/clone-for
-                   [path (:branches options [""])]
-                   [:remote] (xml/content (str (first scm-path) path)))
+  [session scm options]
+  [:locations :> :*] (xml/clone-for
+                      [path (:branches options [""])]
+                      [:remote] (xml/content (str (path-from-scm scm) path))
+                      [:local] (xml/content (local-from-scm scm)))
   [:useUpdate] (xml/content (truefalse (:use-update options)))
   [:doRevert] (xml/content (truefalse (:do-revert options)))
   ;; :browser {:class "a.b.c" :url "http://..."}
@@ -449,8 +458,8 @@
   [:excludedCommitMessages] (xml/content (:excluded-commit-essages options)))
 
 (defmethod output-scm-for :svn
-  [scm-type session scm-path options]
-  (svn-job-xml session scm-path options))
+  [scm-type session scm options]
+  (svn-job-xml session scm options))
 
 (defn normalise-scms [scms]
   (map #(if (string? %) [%] %) scms))
@@ -808,13 +817,14 @@
      (thread-expr/when->
       subversion-credentials
       (remote-file/remote-file
-      (str hudson-data-path "/jobs/" job-name "/subversion.credentials")
-      :content
-      (credential-store (zipmap
-                         (map #(str "<" (url-without-path (ffirst scm)) ">" %)
-                              (keys subversion-credentials))
-                         (vals subversion-credentials)))
-      :owner hudson-owner :group hudson-group :mode "0664")))))
+       (str hudson-data-path "/jobs/" job-name "/subversion.credentials")
+       :content
+       (credential-store (zipmap
+                          (map #(str "<" (url-without-path
+                                          (path-from-scm (first scm))) ">" %)
+                               (keys subversion-credentials))
+                          (vals subversion-credentials)))
+       :owner hudson-owner :group hudson-group :mode "0664")))))
 
 
 
