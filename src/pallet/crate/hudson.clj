@@ -33,6 +33,7 @@
 (def/defvar- *maven-file* "hudson.tasks.Maven.xml")
 (def/defvar- *maven2-job-config-file* "job/maven2_config.xml")
 (def/defvar- *ant-job-config-file* "job/ant_config.xml")
+(def/defvar- *script-job-config-file* "job/script_config.xml")
 (def/defvar- *git-file* "scm/git.xml")
 (def/defvar- *svn-file* "scm/svn.xml")
 (def/defvar- *ant-file* "hudson.tasks.Ant.xml")
@@ -654,7 +655,7 @@
   [session scm-type scms options]
   (enlive/xml-emit
    (enlive/xml-template
-    (path-for *ant-job-config-file*) session
+    (path-for *script-job-config-file*) session
     [scm-type scms options]
     [:daysToKeep] (enlive/transform-if-let [keep (:days-to-keep options)]
                                            (xml/content (str keep)))
@@ -670,11 +671,7 @@
                         (truefalse (:concurrent-build options false)))
     [:builders xml/first-child] (xml/clone-for
                                  [task (:script-tasks options)]
-                                 [:targets] (xml/content (:targets task))
-                                 [:properties] (xml/content
-                                                (format/name-values
-                                                 (:properties task)
-                                                 :separator "=")))
+                                 [:command] (xml/content (:command task)))
     [:publishers]
     (xml/html-content
      (string/join (map publisher-config (:publishers options))))
