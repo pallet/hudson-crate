@@ -4,10 +4,10 @@
   <parent>
     <groupId>org.cloudhoist</groupId>
     <artifactId>pallet-crate-pom</artifactId>
-    <version>0.6.0</version>
+    <version>0.7.0-SNAPSHOT</version>
   </parent>
   <artifactId>hudson</artifactId>
-  <version>0.6.1-SNAPSHOT</version>
+  <version>0.7.0-SNAPSHOT</version>
 
   <scm>
     <connection>scm:git:git://github.com/pallet/hudson-crate.git</connection>
@@ -33,12 +33,6 @@
     <dependency>
       <groupId>org.cloudhoist</groupId>
       <artifactId>ssh</artifactId>
-      <optional>true</optional>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.cloudhoist</groupId>
-      <artifactId>automated-admin-user</artifactId>
       <optional>true</optional>
       <scope>test</scope>
     </dependency>
