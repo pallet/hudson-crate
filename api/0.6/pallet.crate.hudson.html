@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html><head><link href="css/default.css" rel="stylesheet" type="text/css"><script src="js/jquery.min.js" type="text/javascript"></script><script src="js/page_effects.js" type="text/javascript"></script><title>pallet.crate.hudson documentation</title></head><body><div id="header"><h1><a href="index.html">Hudson 0.6.1-SNAPSHOT API documentation</a></h1></div><div class="sidebar" id="namespaces"><h3>Namespaces</h3><ul><li class="current"><a href="pallet.crate.hudson.html">pallet.crate.hudson</a></li></ul></div><div class="sidebar" id="vars"><h3>Public Vars</h3><ul><li><a href="pallet.crate.hudson.html#var-ant">ant</a></li><li><a href="pallet.crate.hudson.html#var-ant-config">ant-config</a></li><li><a href="pallet.crate.hudson.html#var-ant-job-xml">ant-job-xml</a></li><li><a href="pallet.crate.hudson.html#var-build">build</a></li><li><a href="pallet.crate.hudson.html#var-cli-command">cli-command</a></li><li><a href="pallet.crate.hudson.html#var-config">config</a></li><li><a href="pallet.crate.hudson.html#var-config-xml">config-xml</a></li><li><a href="pallet.crate.hudson.html#var-credential-entry">credential-entry</a></li><li><a href="pallet.crate.hudson.html#var-credential-store">credential-store</a></li><li><a href="pallet.crate.hudson.html#var-determine-scm-type">determine-scm-type</a></li><li><a href="pallet.crate.hudson.html#var-hudson-ant-xml">hudson-ant-xml</a></li><li><a href="pallet.crate.hudson.html#var-hudson-cli">hudson-cli</a></li><li><a href="pallet.crate.hudson.html#var-hudson-maven-xml">hudson-maven-xml</a></li><li><a href="pallet.crate.hudson.html#var-hudson-plugins">hudson-plugins</a></li><li><a href="pallet.crate.hudson.html#var-hudson-url">hudson-url</a></li><li><a href="pallet.crate.hudson.html#var-hudson-user-xml">hudson-user-xml</a></li><li><a href="pallet.crate.hudson.html#var-job">job</a></li><li><a href="pallet.crate.hudson.html#var-maven-config">maven-config</a></li><li><a href="pallet.crate.hudson.html#var-maven2-job-xml">maven2-job-xml</a></li><li><a href="pallet.crate.hudson.html#var-output-build-for">output-build-for</a></li><li><a href="pallet.crate.hudson.html#var-output-scm-for">output-scm-for</a></li><li><a href="pallet.crate.hudson.html#var-path-for">path-for</a></li><li><a href="pallet.crate.hudson.html#var-plugin">plugin</a></li><li><a href="pallet.crate.hudson.html#var-plugin-config">plugin-config</a></li><li><a href="pallet.crate.hudson.html#var-plugin-property">plugin-property</a></li><li><a href="pallet.crate.hudson.html#var-plugin-via-cli">plugin-via-cli</a></li><li><a href="pallet.crate.hudson.html#var-publisher-config">publisher-config</a></li><li><a href="pallet.crate.hudson.html#var-reload-configuration">reload-configuration</a></li><li><a href="pallet.crate.hudson.html#var-script-job-xml">script-job-xml</a></li><li><a href="pallet.crate.hudson.html#var-threshold-levels">threshold-levels</a></li><li><a href="pallet.crate.hudson.html#var-tomcat-deploy">tomcat-deploy</a></li><li><a href="pallet.crate.hudson.html#var-tomcat-undeploy">tomcat-undeploy</a></li><li><a href="pallet.crate.hudson.html#var-trigger-config">trigger-config</a></li><li><a href="pallet.crate.hudson.html#var-user">user</a></li><li><a href="pallet.crate.hudson.html#var-version">version</a></li></ul></div><div class="namespace-docs" id="content"><h2>pallet.crate.hudson documentation</h2><pre class="doc">Installation of hudson
+</pre><div class="public" id="var-ant"><h3>ant</h3><div class="usage"><code>(ant request name version)</code></div><pre class="doc">Install and use ant with hudson
+</pre></div><div class="public" id="var-ant-config"><h3>ant-config</h3><div class="usage"><code>(ant-config session name path properties)</code></div><pre class="doc">Configure an ant tool installation descriptor for hudson.
+- `name`        a name for this installation of ant
+- `path`        a path to the home of this ant installation
+- `properties`  a properties map for this installation of ant</pre></div><div class="public" id="var-ant-job-xml"><h3>ant-job-xml</h3><div class="usage"><code>(ant-job-xml session scm-type scms options)</code></div><pre class="doc">Generate ant job/config.xml content
+</pre></div><div class="public" id="var-build"><h3>build</h3><div class="usage"><code>(build session job)</code></div><pre class="doc">Build a job
+</pre></div><div class="public" id="var-cli-command"><h3>cli-command</h3><div class="usage"><code>(cli-command session message command)</code></div><pre class="doc">Execute a maven cli command
+</pre></div><div class="public" id="var-config"><h3>config</h3><div class="usage"><code>(config session &amp; {:keys [use-security security-realm disable-signup admin-user admin-password], :as options})</code></div><pre class="doc">hudson config.
+</pre></div><div class="public" id="var-config-xml"><h3>config-xml</h3><div class="usage"><code>(config-xml session options)</code></div><pre class="doc">Generate config.xml content
+</pre></div><div class="public" id="var-credential-entry"><h3>credential-entry</h3><div class="usage"><code>(credential-entry [name {:keys [user-name password]}])</code></div><pre class="doc">Produce an xml representation for a credential entry in a credential store
+</pre></div><div class="public" id="var-credential-store"><h3>credential-store</h3><div class="usage"><code>(credential-store credential-map)</code></div><pre class="doc">Output a credential store definition for a job configuration.
+Accepts a credential map from name to credentials. Credentials
+are a map containing :user-name and :password keys.</pre></div><div class="public" id="var-determine-scm-type"><h3>determine-scm-type</h3><div class="usage"><code>(determine-scm-type scm-spec)</code></div><pre class="doc">determine the scm type
+</pre></div><div class="public" id="var-hudson-ant-xml"><h3>hudson-ant-xml</h3><div class="usage"><code>(hudson-ant-xml node-type hudson-data-path installations)</code></div><pre class="doc">Generate hudson.task.Ant.xml content
+</pre></div><div class="public" id="var-hudson-cli"><h3>hudson-cli</h3><div class="usage"><code>(hudson-cli session)</code></div><pre class="doc">Install a hudson cli.
+</pre></div><div class="public" id="var-hudson-maven-xml"><h3>hudson-maven-xml</h3><div class="usage"><code>(hudson-maven-xml session hudson-data-path maven-tasks)</code></div><pre class="doc">Generate hudson.task.Maven.xml content
+</pre></div><div class="public" id="var-hudson-plugins"><h3>hudson-plugins</h3><div class="usage"></div><pre class="doc">allow overide of urls
+</pre></div><div class="public" id="var-hudson-url"><h3>hudson-url</h3><div class="usage"><code>(hudson-url version)</code></div><pre class="doc">Calculate the url for the specified version
+</pre></div><div class="public" id="var-hudson-user-xml"><h3>hudson-user-xml</h3><div class="usage"><code>(hudson-user-xml session user)</code></div><pre class="doc">Generate user config.xml content
+</pre></div><div class="public" id="var-job"><h3>job</h3><div class="usage"><code>(job session build-type job-name &amp; {:keys [refspec receivepack uploadpack tagopt description branches scm scm-type merge-target subversion-credentials], :as options})</code></div><pre class="doc">Configure a hudson job.
+
+`build-type` :maven2 is the only supported type at the moment.
+`name` - name to be used in links
+
+Options are:
+- :scm-type  determine scm type, eg. :git
+- :scm a sequence strings specifying scm locations.
+- :description &quot;a descriptive string&quot;
+- :branches [&quot;branch1&quot; &quot;branch2&quot;]
+- :properties specifies plugin properties, map from plugin keyword to a map
+              of tag values. Use :authorization-matrix to specify a sequence
+              of maps with :user and :permissions keys.
+- :publishers specifies a map of publisher specfic options
+Other options are SCM specific.
+
+git:
+- :name
+- :refspec
+- :receivepack
+- :uploadpack
+- :tagopt
+
+svn:
+- :use-update
+- :do-revert
+- :browser {:class &quot;a.b.c&quot; :url &quot;http://...&quot;}
+- :excluded-regions
+- :included-regions
+- :excluded-users
+- :excluded-revprop
+- :excludedCommitMessages
+
+
+Example
+    (job
+      :maven2 &quot;project&quot;
+      :maven-opts &quot;-Dx=y&quot;
+      :branches [&quot;origin/master&quot;]
+      :scm [&quot;http://project.org/project.git&quot;]
+      :num-to-keep 10
+      :browser {:class &quot;hudson.scm.browsers.FishEyeSVN&quot;
+                :url &quot;http://fisheye/browse/&quot;}
+      :concurrent-build true
+      :goals &quot;clean install&quot;
+      :default-goals &quot;install&quot;
+      :ignore-upstream-changes true
+      :properties {:disk-usage {}
+                   :authorization-matrix
+                     [{:user &quot;anonymous&quot;
+                       :permissions #{:item-read :item-build}}]}
+      :publishers {:artifact-archiver
+                    {:artifacts &quot;**/*.war&quot; :latestOnly false}})</pre></div><div class="public" id="var-maven-config"><h3>maven-config</h3><div class="usage"><code>(maven-config session name version)</code></div><pre class="doc">Configure a maven instance for hudson.
+</pre></div><div class="public" id="var-maven2-job-xml"><h3>maven2-job-xml</h3><div class="usage"><code>(maven2-job-xml session scm-type scms options)</code></div><pre class="doc">Generate maven2 job/config.xml content
+</pre></div><div class="public" id="var-output-build-for"><h3>output-build-for</h3><div class="usage"></div><pre class="doc">Output the build definition for specified type
+</pre></div><div class="public" id="var-output-scm-for"><h3>output-scm-for</h3><div class="usage"></div><pre class="doc">Output the scm definition for specified type
+</pre></div><div class="public" id="var-path-for"><h3>path-for</h3><div class="usage"><code>(path-for base)</code></div><pre class="doc">Get the actual filename corresponding to a template.
+</pre></div><div class="public" id="var-plugin"><h3>plugin</h3><div class="usage"><code>(plugin session plugin &amp; {:keys [url md5 version], :or {version :latest}, :as options})</code></div><pre class="doc">Install a hudson plugin.  The plugin should be a keyword.
+:url can be used to specify a string containing the download url</pre></div><div class="public" id="var-plugin-config"><h3>plugin-config</h3><div class="usage"></div><pre class="doc">Plugin specific configuration.
+</pre></div><div class="public" id="var-plugin-property"><h3>plugin-property</h3><div class="usage"></div><pre class="doc">Plugin specific job property.
+</pre></div><div class="public" id="var-plugin-via-cli"><h3>plugin-via-cli</h3><div class="usage"><code>(plugin-via-cli session plugin &amp; {:keys [url], :as options})</code></div><pre class="doc">Install a hudson plugin.  The plugin should be a keyword.
+:url can be used to specify a string containing the download url</pre></div><div class="public" id="var-publisher-config"><h3>publisher-config</h3><div class="usage"></div><pre class="doc">Publisher configuration
+</pre></div><div class="public" id="var-reload-configuration"><h3>reload-configuration</h3><div class="usage"><code>(reload-configuration session)</code></div><pre class="doc">Show running version
+</pre></div><div class="public" id="var-script-job-xml"><h3>script-job-xml</h3><div class="usage"><code>(script-job-xml session scm-type scms options)</code></div><pre class="doc">Generate script job/config.xml content
+</pre></div><div class="public" id="var-threshold-levels"><h3>threshold-levels</h3><div class="usage"></div><pre class="doc">Provides a map from stability to name, ordinal and color
+</pre></div><div class="public" id="var-tomcat-deploy"><h3>tomcat-deploy</h3><div class="usage"><code>(tomcat-deploy session &amp; {:keys [version tomcat-instance], :or {version :latest}, :as options})</code></div><pre class="doc">Install hudson on tomcat.
+:version version-string   - specify version, eg 1.355, or :latest</pre></div><div class="public" id="var-tomcat-undeploy"><h3>tomcat-undeploy</h3><div class="usage"><code>(tomcat-undeploy session)</code></div><pre class="doc">Remove hudson on tomcat
+</pre></div><div class="public" id="var-trigger-config"><h3>trigger-config</h3><div class="usage"></div><pre class="doc">trigger configuration
+</pre></div><div class="public" id="var-user"><h3>user</h3><div class="usage"><code>(user session username {:keys [full-name password-hash email], :as user})</code></div><pre class="doc">Add a hudson user, using hudson's user database.
+</pre></div><div class="public" id="var-version"><h3>version</h3><div class="usage"><code>(version session)</code></div><pre class="doc">Show running version
+</pre></div></div></body></html>
