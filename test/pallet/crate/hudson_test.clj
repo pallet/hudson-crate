@@ -14,6 +14,7 @@
    [pallet.live-test :as live-test]
    [pallet.parameter-test :as parameter-test]
    [pallet.phase :as phase]
+   [pallet.compute.node-list :as node-list]
    [pallet.stevedore :as stevedore]
    [pallet.template :only [apply-templates]]
    [pallet.utils :as utils]
@@ -133,7 +134,28 @@
                     {:tag "permission" :content "hudson.model.Item.Build:me"}]}
          (plugin-property [:authorization-matrix
                            [{:user "me"
-                             :permissions #{:item-build :item-read}}]]))))
+                             :permissions #{:item-build :item-read}}]])))
+  (is (= {:tag "hudson.model.ParametersDefinitionProperty"
+          :content
+          [{:tag "parameterDefinitions"
+             :content
+             [{:tag "hudson.model.StringParameterDefinition"
+               :content
+               [{:tag "description" :content "DescriptionA"}
+                {:tag "defaultValue" :content "DefaultValueA"}
+                {:tag "name" :content "StringA"}]}
+              {:tag "hudson.model.FileParameterDefinition"
+               :content
+               [{:tag "description" :content "DescriptionB"}
+                {:tag "name" :content "FileB"}]}]}]}
+         (plugin-property [:parameters
+                           [{:type :string
+                             :name "StringA"
+                             :description "DescriptionA"
+                             :default-value "DefaultValueA"}
+                            {:type :file
+                             :name "FileB"
+                             :description "DescriptionB"}]]))))
 
 (deftest hudson-job-test
   (let [n (core/group-spec "n")]
@@ -179,6 +201,16 @@
                        "/var/lib/hudson"
                        [["name" "/some/path" {:a 1}]]))))))
 
+(deftest hudson-mailer-xml-test
+  (let [test-node (core/group-spec "test-node" :image {:os-family :ubuntu})]
+    (is (= "<?xml version='1.0' encoding='UTF-8'?><hudson.tasks.Mailer_-DescriptorImpl><hudsonUrl>http://192.168.36.111:8080/hudson/</hudsonUrl><adminAddress>me@me.com</adminAddress><smtpHost>192.168.36.111</smtpHost><useSsl>false</useSsl><charset>UTF-8</charset></hudson.tasks.Mailer_-DescriptorImpl>"
+           (apply str (hudson-mailer-xml
+                       "http://192.168.36.111:8080/hudson/"
+                       "me@me.com"
+                       "192.168.36.111"
+                       false
+                       "UTF-8"))))))
+
 (deftest hudson-maven-test
   (is (= (first
           (build-actions/build-actions
@@ -223,6 +255,27 @@
                                         :owner "root"
                                         :data-path "/var/lib/hudson"}}}}}
            (ant-config "name" "/some/path" {:a 1}))))))
+
+(deftest hudson-mailer-test
+  (is (= (first
+          (build-actions/build-actions
+           {}
+           (remote-file/remote-file
+            "/var/lib/hudson/hudson.tasks.Mailer.xml"
+            :content
+            "<?xml version='1.0' encoding='UTF-8'?><hudson.tasks.Mailer_-DescriptorImpl><hudsonUrl>http://1.2.3.4:8080/hudson</hudsonUrl><adminAddress>me@me.com</adminAddress><smtpHost>1.2.3.4</smtpHost><useSsl>false</useSsl><charset>UTF-8</charset></hudson.tasks.Mailer_-DescriptorImpl>"
+            :owner "root"
+            :group "tomcat6"
+            :mode "0664")))
+         (first
+          (build-actions/build-actions
+           {:server {:image {:os-family :ubuntu}
+                     :node (make-node  "hudson")}
+            :parameters {:host
+                         {:hudson-1-2-3-4 {:hudson {:user "tomcat6" :group "tomcat6"
+                                        :owner "root"
+                                        :data-path "/var/lib/hudson"}}}}}
+           (mailer-config "me@me.com" false))))))
 
 (deftest plugin-test
   (is (= (first
@@ -320,7 +373,21 @@
                   "</hudson.tasks.BuildTrigger>")
              (publisher-config
               [:build-trigger
-               {:child-projects "a,b" :threshold :unstable}]))))))
+               {:child-projects "a,b" :threshold :unstable}])))))
+  (testing "parameterized trigger"
+    (is (= "<hudson.plugins.parameterizedtrigger.BuildTrigger><configs><hudson.plugins.parameterizedtrigger.BuildTriggerConfig><configs><hudson.plugins.parameterizedtrigger.FileBuildParameters><propertiesFile>build.properties</propertiesFile></hudson.plugins.parameterizedtrigger.FileBuildParameters></configs><projects>package_cache</projects><condition>SUCCESS</condition></hudson.plugins.parameterizedtrigger.BuildTriggerConfig></configs></hudson.plugins.parameterizedtrigger.BuildTrigger>"
+           (publisher-config
+            [:parameterized-trigger
+             [{:projects ["package_cache"]
+               :condition :stable
+               :config
+               {:file"build.properties"}}
+              #_{:projects ["new-project" "new-project2"]
+               :condition :always
+               :config
+               {:git-revision true
+                :predefined "A=1\nB=2"
+                :current false}}]])))))
 
 (def unsupported [{:os-family :debian}]) ; no tomcat6
 

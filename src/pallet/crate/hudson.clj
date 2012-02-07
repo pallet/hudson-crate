@@ -15,13 +15,15 @@
    [pallet.stevedore :as stevedore]
    [pallet.thread-expr :as thread-expr]
    [pallet.utils :as utils]
+   [pallet.session :as session]
    [clojure.contrib.def :as def]
    [clojure.contrib.logging :as logging]
    [clojure.contrib.prxml :as prxml]
    [net.cgrand.enlive-html :as xml]
    [clojure.string :as string])
   (:import
-   org.apache.commons.codec.binary.Base64))
+   org.apache.commons.codec.binary.Base64)
+  (:use clojure.pprint))
 
 (def hudson-data-path "/var/lib/hudson")
 (def hudson-owner "root")
@@ -37,6 +39,7 @@
 (def/defvar- *git-file* "scm/git.xml")
 (def/defvar- *svn-file* "scm/svn.xml")
 (def/defvar- *ant-file* "hudson.tasks.Ant.xml")
+(def/defvar- *mailer-file* "hudson.tasks.Mailer.xml")
 
 (defn path-for
   "Get the actual filename corresponding to a template."
@@ -290,7 +293,8 @@
    :github "com.coravy.hudson.plugins.github.GithubProjectProperty"
    :jira "hudson.plugins.jira.JiraProjectProperty"
    :shelve-project-plugin
-     "org.jvnet.hudson.plugins.shelveproject.ShelveProjectProperty"})
+   "org.jvnet.hudson.plugins.shelveproject.ShelveProjectProperty"
+   :parameters "hudson.model.ParametersDefinitionProperty"})
 
 ;; default implementation looks up the property in the `property-names` map
 ;; and adds tags for each of the entries in `options`
@@ -311,6 +315,48 @@
                              "%s:%s" (permission-class permission) user)})
                 permissions))
              options)})
+
+
+;;; Parametrized builds
+
+(def parameters-types
+  {:string "hudson.model.StringParameterDefinition"
+   :file "hudson.model.FileParameterDefinition"
+   :boolean "hudson.model.BooleanParameterDefinition"
+   :run "hudson.model.RunParameterDefinition"
+   :password "hudson.model.PasswordParameterDefinition"})
+
+(def parameters-entries
+  {:name "name"
+   :default-value "defaultValue"
+   :description "description"
+   :project-name "projectName"})
+
+(def parameters-valid-keys
+  {:string #{:name :default-value :description}
+   :file #{:name :description}
+   :run #{:name :description :project-name}
+   :boolean #{:name :description :default-value}
+   :password #{:name :description :default-value}})
+
+(defmethod plugin-property :parameters [[plugin options]]
+  (let [output
+        {:tag (property-names plugin)
+         :content
+         [{:tag "parameterDefinitions"
+            :content (vec (map
+                           (fn [{:keys [type] :as entries}]
+                             (let [valid-entries
+                                   (select-keys entries (type parameters-valid-keys))]
+                               {:tag (type parameters-types)
+                                :content
+                                (vec (map (fn [[k v]]
+                                            {:tag (k parameters-entries)
+                                             :content v})
+                                          valid-entries))}))
+                           options))}]}]
+    ;;(println "parameters: " output)
+    output))
 
 (def hudson-plugin-latest-url "http://updates.hudson-labs.org/latest/")
 (def hudson-plugin-base-url "http://mirrors.jenkins-ci.org/plugins/")
@@ -519,7 +565,48 @@
   (with-out-str
     (prxml/prxml [:hudson.tasks.ArtifactArchiver {}
             [:artifacts {} (:artifacts options)]
-            [:latestOnly {} (truefalse (:latest-only options false))]])))
+                  [:latestOnly {} (truefalse (:latest-only options false))]])))
+
+(def condition-values
+  {:stable "SUCCESS"
+   :unstable "UNSTABLE"
+   :unstable-or-better "UNSTABLE_OR_BETTER"
+   :failed "FAILED"
+   :always "ALWAYS"})
+
+(defn- process-parametrized-trigger-config-entry [[k v]]
+  (condp = k
+    :git-revision
+    (when v
+      [:hudson.plugins.parameterizedtrigger.GitRevisionBuildParameters])
+    :subversion-revision
+    (when v
+      [:hudson.plugins.parameterizedtrigger.SubversionRevisionBuildParameters])
+    :predefined
+    [:hudson.plugins.parameterizedtrigger.PredefinedBuildParameters {} v]
+    :file
+    [:hudson.plugins.parameterizedtrigger.FileBuildParameters
+     [:propertiesFile  {} v]]
+    :current
+    (when v
+      [:hudson.plugins.parameterizedtrigger.CurrentBuildParameters])
+    :predefined
+    [:hudson.plugins.parameterizedtrigger.PredefinedBuildParameters
+     [:properties {} v]]))
+
+(defmethod publisher-config :parameterized-trigger
+  [[_ options]]
+  (let [data
+        [:hudson.plugins.parameterizedtrigger.BuildTrigger
+         (into
+          [:configs]
+          (for [{:keys [projects condition config] :as trigger-config} options]
+            [:hudson.plugins.parameterizedtrigger.BuildTriggerConfig
+             (into [:configs]
+                   (map process-parametrized-trigger-config-entry config))
+             [:projects {} (apply str (interpose ", " projects))]
+             [:condition {} (condition condition-values)]]))]]
+    (with-out-str (prxml/prxml data))))
 
 (def
   ^{:doc "Provides a map from stability to name, ordinal and color"}
@@ -915,6 +1002,45 @@
       (str hudson-data-path "/" *ant-file*)
       :content (apply
                 str (hudson-ant-xml session hudson-data-path args))
+      :owner hudson-owner :group group :mode "0664"))))
+
+(defn hudson-mailer-xml [hudson-url admin-address smtp-host use-ssl charset]
+  (str "<?xml version='1.0' encoding='UTF-8'?>"
+       (with-out-str
+         (prxml/prxml
+          [:hudson.tasks.Mailer_-DescriptorImpl
+           [:hudsonUrl hudson-url]
+           [:adminAddress admin-address]
+           [:smtpHost smtp-host]
+           [:useSsl use-ssl]
+           [:charset charset]]))))
+
+(action/def-collected-action mailer-config
+  "Configures the Hudson Mailer with an admin address, and possibly use SSL.
+
+WARNING: This code is far from being complete. At this point it will
+  configure it to point at itself, and for now this is only useful so
+  that there is one place in the configuration to find a url that
+  points at hudson. Even in this latter case, the port and hudson
+  application name are hardcoded."
+  {:arglists '(admin-address use-ssl)} [session args]
+  (let [[ [admin-address use-ssl]] args
+        target-ip (session/target-ip session)
+        group (parameter/get-for-target session [:hudson :group])
+        hudson-owner (parameter/get-for-target session [:hudson :owner])
+        user (parameter/get-for-target session [:hudson :user])
+        hudson-data-path (parameter/get-for-target
+                          session [:hudson :data-path])]
+    (stevedore/do-script
+     (remote-file*
+      session
+      (str hudson-data-path "/" *mailer-file*)
+      :content (hudson-mailer-xml
+                (format "http://%s:8080/hudson" target-ip)
+                admin-address
+                target-ip
+                (or use-ssl false)
+                "UTF-8")
       :owner hudson-owner :group group :mode "0664"))))
 
 (defn maven
