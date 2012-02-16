@@ -15,8 +15,7 @@
    [pallet.stevedore :as stevedore]
    [pallet.thread-expr :as thread-expr]
    [pallet.utils :as utils]
-   [clojure.contrib.def :as def]
-   [clojure.contrib.logging :as logging]
+   [clojure.tools.logging :as logging]
    [clojure.contrib.prxml :as prxml]
    [net.cgrand.enlive-html :as xml]
    [clojure.string :as string])
@@ -28,14 +27,14 @@
 (def hudson-user  "hudson")
 (def hudson-group  "hudson")
 
-(def/defvar- *config-file* "config.xml")
-(def/defvar- *user-config-file* "users/config.xml")
-(def/defvar- *maven-file* "hudson.tasks.Maven.xml")
-(def/defvar- *maven2-job-config-file* "job/maven2_config.xml")
-(def/defvar- *ant-job-config-file* "job/ant_config.xml")
-(def/defvar- *git-file* "scm/git.xml")
-(def/defvar- *svn-file* "scm/svn.xml")
-(def/defvar- *ant-file* "hudson.tasks.Ant.xml")
+(def ^{:dynamic true} *config-file* "config.xml")
+(def ^{:dynamic true} *user-config-file* "users/config.xml")
+(def ^{:dynamic true} *maven-file* "hudson.tasks.Maven.xml")
+(def ^{:dynamic true} *maven2-job-config-file* "job/maven2_config.xml")
+(def ^{:dynamic true} *ant-job-config-file* "job/ant_config.xml")
+(def ^{:dynamic true} *git-file* "scm/git.xml")
+(def ^{:dynamic true} *svn-file* "scm/svn.xml")
+(def ^{:dynamic true} *ant-file* "hudson.tasks.Ant.xml")
 
 (defn path-for
   "Get the actual filename corresponding to a template."
@@ -64,7 +63,7 @@
      :version version-string   - specify version, eg 1.355, or :latest"
   [session & {:keys [version tomcat-instance]
               :or {version :latest} :as options}]
-  (logging/trace (str "Hudson - install on tomcat"))
+  (logging/trace "Hudson - install on tomcat")
   (let [tc-settings (parameter/get-target-settings
                      session :tomcat tomcat-instance)
         user (:owner tc-settings)
@@ -113,7 +112,7 @@
 (defn tomcat-undeploy
   "Remove hudson on tomcat"
   [session]
-  (logging/trace (str "Hudson - uninistall from tomcat"))
+  (logging/trace "Hudson - uninistall from tomcat")
   (let [hudson-data-path (parameter/get-for-target
                            session [:hudson :data-path])
         file (str hudson-data-path "/hudson.war")]
