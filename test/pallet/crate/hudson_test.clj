@@ -333,51 +333,53 @@
       {:image (update-in image [:min-ram] #(max (or % 0) 512))
        :count 1
        :phases {:bootstrap (phase/phase-fn
-                            (automated-admin-user/automated-admin-user))
+                             (automated-admin-user/automated-admin-user))
+                :settings (phase/phase-fn
+                            (tomcat/tomcat-settings :version 6))
                 :configure (phase/phase-fn
-                            (tomcat/install :version 6)
-                            (tomcat-deploy)
-                            (config)
-                            (plugin :git :version "1.1.5")
-                            (plugin :jira :version "1.26")
-                            (plugin :disk-usage :version "0.12")
-                            (plugin :shelve-project-plugin :version "1.1")
-                            (ant-config "antabc" "/some/path" {})
-                            (job
-                             :maven2 "gitjob"
-                             :maven-name "default maven"
-                             :scm ["git://github.com/hugoduncan/pallet.git"])
-                            (job
-                             :maven2 "svnjob"
-                             :maven-name "default maven"
-                             :scm ["http://svn.host.com/project"]
-                             :subversion-credentials
-                             {"somename"
-                              {:user-name "u" :password "p"}})
-                            (job
-                             :ant "antjob"
-                             :num-to-keep 1
-                             :ant-tasks [{:targets "jar"
-                                          :ant-name "name"
-                                          :build-file "file.xml"
-                                          :properties {:a 1}}]
-                             :scm ["git://github.com/hugoduncan/pallet.git"])
-                            (tomcat/init-service :action :restart))
+                             (tomcat/install-tomcat)
+                             (tomcat-deploy)
+                             (config)
+                             (plugin :git :version "1.1.5")
+                             (plugin :jira :version "1.26")
+                             (plugin :disk-usage :version "0.12")
+                             (plugin :shelve-project-plugin :version "1.1")
+                             (ant-config "antabc" "/some/path" {})
+                             (job
+                              :maven2 "gitjob"
+                              :maven-name "default maven"
+                              :scm ["git://github.com/hugoduncan/pallet.git"])
+                             (job
+                              :maven2 "svnjob"
+                              :maven-name "default maven"
+                              :scm ["http://svn.host.com/project"]
+                              :subversion-credentials
+                              {"somename"
+                               {:user-name "u" :password "p"}})
+                             (job
+                              :ant "antjob"
+                              :num-to-keep 1
+                              :ant-tasks [{:targets "jar"
+                                           :ant-name "name"
+                                           :build-file "file.xml"
+                                           :properties {:a 1}}]
+                              :scm ["git://github.com/hugoduncan/pallet.git"])
+                             (tomcat/init-service :action :restart))
                 :verify (phase/phase-fn
-                         ;; hudson takes a while to start up
-                         (network-service/wait-for-http-status
-                          "http://localhost:8080/hudson" 200
-                          :max-retries 10 :url-name "hudson")
-                         (exec-script/exec-checked-script
-                          "check hudson installed"
-                          (wget "-O-" "http://localhost:8080/hudson")
-                          (wget "-O-" "http://localhost:8080/hudson/job/gitjob")
-                          (wget
-                           "-O-" "http://localhost:8080/hudson/job/svnjob")
-                          (wget "-O-" "http://localhost:8080/hudson/job/antjob")
-                          ("test"
-                           (file-exists?
-                            "/var/lib/hudson/jobs/svnjob/subversion.credentials"))
-                          ("test"
-                           (file-exists? "/var/lib/hudson/hudson.tasks.Ant.xml"))))}}}
+                          ;; hudson takes a while to start up
+                          (network-service/wait-for-http-status
+                           "http://localhost:8080/hudson" 200
+                           :max-retries 10 :url-name "hudson")
+                          (exec-script/exec-checked-script
+                           "check hudson installed"
+                           (wget "-O-" "http://localhost:8080/hudson")
+                           (wget "-O-" "http://localhost:8080/hudson/job/gitjob")
+                           (wget
+                            "-O-" "http://localhost:8080/hudson/job/svnjob")
+                           (wget "-O-" "http://localhost:8080/hudson/job/antjob")
+                           ("test"
+                            (file-exists?
+                             "/var/lib/hudson/jobs/svnjob/subversion.credentials"))
+                           ("test"
+                            (file-exists? "/var/lib/hudson/hudson.tasks.Ant.xml"))))}}}
      (core/lift (:hudson node-types) :phase :verify :compute compute))))
