@@ -9,6 +9,7 @@
   </authorizationStrategy>
   <securityRealm class="hudson.security.HudsonPrivateSecurityRealm">
     <disableSignup>false</disableSignup>
+    <serviceName>sshd</serviceName>
   </securityRealm>
   <jdks/>
   <clouds/>

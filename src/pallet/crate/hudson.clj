@@ -198,10 +198,12 @@
   (if value "true" "false"))
 
 (def security-realm-class
-  {:hudson "hudson.security.HudsonPrivateSecurityRealm"})
+  {:hudson "hudson.security.HudsonPrivateSecurityRealm"
+   :pam "hudson.security.PAMSecurityRealm"})
 
 (def authorization-strategy-class
-  {:global-matrix "hudson.security.GlobalMatrixAuthorizationStrategy"})
+  {:global-matrix "hudson.security.GlobalMatrixAuthorizationStrategy"
+   :logged-in "hudson.security.FullControlOnceLoggedInAuthorizationStrategy"})
 
 (def permission-class
   {:computer-configure "hudson.model.Computer.Configure"
@@ -972,9 +974,14 @@
     [options]
     [:useSecurity] (xml/content (if (:use-security options) "true" "false"))
     [:securityRealm] (when-let [realm (:security-realm options)]
+                       (if (= realm :pam)
+                         (xml/set-attr :class (security-realm-class realm)))
                        (xml/set-attr :class (security-realm-class realm)))
-    [:disableSignup] (xml/content
-                      (if (:disable-signup options) "true" "false"))
+    [:disableSignup] (when (= :hudson (:security-realm options))
+                       (xml/content
+                        (if (:disable-signup options) "true" "false")))
+    [:serviceName] (when (= :pam (:security-realm options))
+                     (xml/content "sshd"))
     [:authorizationStrategy] (when-let [strategy (:authorization-strategy
                                                   options)]
                                (xml/set-attr
@@ -998,7 +1005,7 @@
 (defn config
   "hudson config."
   [session & {:keys [use-security security-realm disable-signup
-                     admin-user admin-password] :as options}]
+                     admin-user admin-password authorization-strategy] :as options}]
   (let [group (parameter/get-for-target session [:hudson :group])
         hudson-owner (parameter/get-for-target session [:hudson :owner])
         hudson-data-path (parameter/get-for-target
